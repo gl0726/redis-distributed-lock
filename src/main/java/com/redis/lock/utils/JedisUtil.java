@@ -53,9 +53,6 @@ public class JedisUtil {
                 count++;
             } catch (Exception e) {
                 logger.error("get jedis failed ", e);
-                if (jedis != null) {
-                    jedis.close();
-                }
             }
         } while (jedis == null && count < redisProperties.getRetry_num());
         return jedis;

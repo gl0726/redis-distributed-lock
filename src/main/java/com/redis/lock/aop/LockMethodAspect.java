@@ -40,25 +40,24 @@ public class LockMethodAspect {
         RedisLock redisLock = method.getAnnotation(RedisLock.class);
         String value = UUID.randomUUID().toString();
         String key = redisLock.key();
+
         boolean isLock = false;
+        Object result = null;
         try {
             isLock = redisLockHelper.lock(jedis,key, value, redisLock.expire(), redisLock.timeUnit());
             logger.info("isLock : {}",isLock);
-            if (!isLock) {
-                logger.error("获取锁失败");
-                throw new RuntimeException("获取锁失败");
+            if (isLock) {
+                result = joinPoint.proceed();
             }
-            try {
-                return joinPoint.proceed();
-            } catch (Throwable throwable) {
-                throw new RuntimeException("系统异常");
-            }
-        }  finally {
+        } catch (Throwable throwable) {
+            logger.error("执行异常", throwable);
+        } finally {
             if (isLock) {
                 logger.info("释放锁");
                 redisLockHelper.unlock(jedis,key, value);
             }
             jedis.close();
         }
+        return result;
     }
 }
